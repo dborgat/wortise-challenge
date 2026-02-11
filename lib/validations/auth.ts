@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+/**
+ * Register schema validation
+ */
+export const registerSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(20, "Name must be less than 20 characters"),
+  email: z.email("Invalid email address").toLowerCase(),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(13, "Password must be less than 13 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+});
+
+/**
+ * Login schema validation
+ */
+export const loginSchema = z.object({
+  email: z.email("Invalid email address").toLowerCase(),
+  password: z.string().min(1, "Password is required"),
+});
+
+/**
+ * Type inference from schemas
+ */
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
