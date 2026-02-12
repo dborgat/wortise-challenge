@@ -1,10 +1,11 @@
-import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
+import { registerSchema, loginSchema } from '@/lib/validations/auth';
+import { auth } from '@/lib/auth';
+import { TRPCError } from '@trpc/server';
 
 /**
  * Auth router
- * Handles authentication-related operations
- * Will be integrated with Better Auth later
+ * Handles authentication-related operations with Better Auth
  */
 export const authRouter = router({
   /**
@@ -12,7 +13,6 @@ export const authRouter = router({
    */
   getSession: publicProcedure
     .query(async ({ ctx }) => {
-      // Placeholder - will implement with Better Auth later
       return ctx.user;
     }),
 
@@ -20,35 +20,49 @@ export const authRouter = router({
    * Register new user
    */
   register: publicProcedure
-    .input(z.object({
-      email: z.string().email('Invalid email'),
-      password: z.string().min(8, 'Password must be at least 8 characters'),
-      name: z.string().min(2, 'Name must be at least 2 characters'),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      // Placeholder - will implement with Better Auth later
-      return { success: true };
+    .input(registerSchema)
+    .mutation(async ({ input }) => {
+      try {
+        const result = await auth.api.signUpEmail({
+          body: {
+            email: input.email,
+            password: input.password,
+            name: input.name,
+          },
+        });
+
+        if (!result) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create account',
+          });
+        }
+
+        return {
+          success: true,
+          user: result.user,
+        };
+      } catch (error: any) {
+        // Handle Better Auth errors
+        if (error.message?.includes('already exists')) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'An account with this email already exists',
+          });
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Failed to create account',
+        });
+      }
     }),
 
   /**
-   * Login user
+   * Get current user profile
    */
-  login: publicProcedure
-    .input(z.object({
-      email: z.string().email('Invalid email'),
-      password: z.string(),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      // Placeholder - will implement with Better Auth later
-      return { success: true };
-    }),
-
-  /**
-   * Logout user
-   */
-  logout: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      // Placeholder - will implement with Better Auth later
-      return { success: true };
+  getProfile: protectedProcedure
+    .query(async ({ ctx }) => {
+      return ctx.user;
     }),
 });
