@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
 import { TRPCError } from '@trpc/server';
+import type { Article, MyArticle } from '@/types/article';
 
 /**
  * Article router
@@ -12,9 +13,12 @@ export const articleRouter = router({
    * TODO: Add pagination
    */
   getAll: publicProcedure
-    .query(async ({ ctx }) => {
+    .input(z.object({
+      limit: z.number().min(1).max(100).optional().default(50),
+    }))
+    .query(async ({ input, ctx }) => {
       // Placeholder - will implement with MongoDB later
-      return [];
+      return [] as Article[];
     }),
 
   /**
@@ -26,7 +30,7 @@ export const articleRouter = router({
     }))
     .query(async ({ input, ctx }) => {
       // Placeholder - will implement with MongoDB later
-      return null;
+      return null as Article | null;
     }),
 
   /**
@@ -74,8 +78,11 @@ export const articleRouter = router({
    * Get articles by current user (protected)
    */
   getMyArticles: protectedProcedure
-    .query(async ({ ctx }) => {
+    .input(z.object({
+      limit: z.number().min(1).max(100).optional().default(50),
+    }))
+    .query(async ({ input, ctx }) => {
       // Placeholder - will implement with MongoDB later
-      return [];
+      return [] as MyArticle[];
     }),
 });
