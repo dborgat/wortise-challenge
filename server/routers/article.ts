@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { ObjectId } from 'mongodb';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
 import { TRPCError } from '@trpc/server';
+import { getArticlesCollection, getUsersCollection } from '@/server/db/collections';
 import type { Article, MyArticle } from '@/types/article';
 
 /**
@@ -10,15 +12,41 @@ import type { Article, MyArticle } from '@/types/article';
 export const articleRouter = router({
   /**
    * Get all articles (public)
-   * TODO: Add pagination
    */
   getAll: publicProcedure
     .input(z.object({
       limit: z.number().min(1).max(100).optional().default(50),
     }))
-    .query(async ({ input, ctx }) => {
-      // Placeholder - will implement with MongoDB later
-      return [] as Article[];
+    .query(async ({ input }): Promise<Article[]> => {
+      const articles = await getArticlesCollection();
+      const users = await getUsersCollection();
+
+      const docs = await articles
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(input.limit)
+        .toArray();
+
+      const authorIds = [...new Set(docs.map((d) => d.authorId.toHexString()))];
+      const authorDocs = await users
+        .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
+        .toArray();
+      const authorMap = new Map(authorDocs.map((a) => [a._id.toHexString(), a]));
+
+      return docs.map((doc) => {
+        const author = authorMap.get(doc.authorId.toHexString());
+        return {
+          id: doc._id.toHexString(),
+          title: doc.title,
+          content: doc.content,
+          coverImage: doc.coverImage,
+          authorId: doc.authorId.toHexString(),
+          authorName: author?.name ?? 'Unknown',
+          authorEmail: author?.email ?? '',
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        };
+      });
     }),
 
   /**
@@ -28,13 +56,31 @@ export const articleRouter = router({
     .input(z.object({
       id: z.string(),
     }))
-    .query(async ({ input, ctx }) => {
-      // Placeholder - will implement with MongoDB later
-      return null as Article | null;
+    .query(async ({ input }): Promise<Article | null> => {
+      if (!ObjectId.isValid(input.id)) return null;
+
+      const articles = await getArticlesCollection();
+      const doc = await articles.findOne({ _id: new ObjectId(input.id) });
+      if (!doc) return null;
+
+      const users = await getUsersCollection();
+      const author = await users.findOne({ _id: doc.authorId });
+
+      return {
+        id: doc._id.toHexString(),
+        title: doc.title,
+        content: doc.content,
+        coverImage: doc.coverImage,
+        authorId: doc.authorId.toHexString(),
+        authorName: author?.name ?? 'Unknown',
+        authorEmail: author?.email ?? '',
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+      };
     }),
 
   /**
-   * Create article (protected - requires authentication)
+   * Create article (protected)
    */
   create: protectedProcedure
     .input(z.object({
@@ -43,8 +89,20 @@ export const articleRouter = router({
       coverImage: z.string().url('Must be a valid URL'),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Placeholder - will implement with MongoDB later
-      return { id: 'temp-id', ...input };
+      const articles = await getArticlesCollection();
+      const now = new Date();
+
+      const result = await articles.insertOne({
+        _id: new ObjectId(),
+        title: input.title,
+        content: input.content,
+        coverImage: input.coverImage,
+        authorId: new ObjectId(ctx.user.id),
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      return { id: result.insertedId.toHexString(), ...input };
     }),
 
   /**
@@ -58,8 +116,28 @@ export const articleRouter = router({
       coverImage: z.string().url().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Placeholder - will implement with MongoDB later
-      return { id: input.id };
+      if (!ObjectId.isValid(input.id)) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+      }
+
+      const articles = await getArticlesCollection();
+      const doc = await articles.findOne({ _id: new ObjectId(input.id) });
+
+      if (!doc) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+      }
+
+      if (doc.authorId.toHexString() !== ctx.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only edit your own articles' });
+      }
+
+      const { id, ...updates } = input;
+      await articles.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { ...updates, updatedAt: new Date() } },
+      );
+
+      return { id };
     }),
 
   /**
@@ -70,7 +148,22 @@ export const articleRouter = router({
       id: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Placeholder - will implement with MongoDB later
+      if (!ObjectId.isValid(input.id)) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+      }
+
+      const articles = await getArticlesCollection();
+      const doc = await articles.findOne({ _id: new ObjectId(input.id) });
+
+      if (!doc) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+      }
+
+      if (doc.authorId.toHexString() !== ctx.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only delete your own articles' });
+      }
+
+      await articles.deleteOne({ _id: new ObjectId(input.id) });
       return { success: true };
     }),
 
@@ -81,8 +174,23 @@ export const articleRouter = router({
     .input(z.object({
       limit: z.number().min(1).max(100).optional().default(50),
     }))
-    .query(async ({ input, ctx }) => {
-      // Placeholder - will implement with MongoDB later
-      return [] as MyArticle[];
+    .query(async ({ input, ctx }): Promise<MyArticle[]> => {
+      const articles = await getArticlesCollection();
+
+      const docs = await articles
+        .find({ authorId: new ObjectId(ctx.user.id) })
+        .sort({ createdAt: -1 })
+        .limit(input.limit)
+        .toArray();
+
+      return docs.map((doc) => ({
+        id: doc._id.toHexString(),
+        title: doc.title,
+        content: doc.content,
+        coverImage: doc.coverImage,
+        authorId: doc.authorId.toHexString(),
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+      }));
     }),
 });

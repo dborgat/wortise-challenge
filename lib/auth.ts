@@ -1,13 +1,16 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { getClient } from "@/server/db/mongo";
+import { MongoClient } from "mongodb";
+
+const client = new MongoClient(process.env.MONGODB_URI!);
+const db = client.db("cms-wortise");
 
 if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error('BETTER_AUTH_SECRET is not set in environment variables');
+  throw new Error("BETTER_AUTH_SECRET is not set in environment variables");
 }
 
 if (!process.env.BETTER_AUTH_URL) {
-  throw new Error('BETTER_AUTH_URL is not set in environment variables');
+  throw new Error("BETTER_AUTH_URL is not set in environment variables");
 }
 
 /**
@@ -15,7 +18,7 @@ if (!process.env.BETTER_AUTH_URL) {
  * Handles authentication with MongoDB
  */
 export const auth = betterAuth({
-  database: mongodbAdapter(getClient()),
+  database: mongodbAdapter(db, { client }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // Disable for development
@@ -42,7 +45,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.BETTER_AUTH_URL!,
     // Add Vercel URL when deploying
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
   ].filter(Boolean),
 });
 
