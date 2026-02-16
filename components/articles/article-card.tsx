@@ -4,19 +4,20 @@ import { type Article } from "@/types/article";
 
 interface ArticleCardProps {
   article: Article;
+  priority?: boolean;
 }
 
 /**
  * Article card component
  * Displays article preview in a card layout
  */
-export function ArticleCard({ article }: ArticleCardProps) {
+export function ArticleCard({ article, priority = false }: ArticleCardProps) {
   const excerpt =
     article.content.slice(0, 150) + (article.content.length > 150 ? "..." : "");
 
   return (
     <Link
-      href={`/articles/${article.id}`}
+      href={`/dashboard/articles/${article.id}`}
       className="group block bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
     >
       {/* Cover Image */}
@@ -27,6 +28,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-200"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          priority={priority}
         />
       </div>
 

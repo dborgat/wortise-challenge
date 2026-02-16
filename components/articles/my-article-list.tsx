@@ -39,7 +39,7 @@ export function MyArticleList({ initialArticles }: MyArticleListProps) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 mb-4">
-          You haven[t created any articles yet.
+          You haven&apos;t created any articles yet.
         </p>
         <Link href="/dashboard/articles/new">
           <Button variant="primary">Create Your First Article</Button>
@@ -82,7 +82,7 @@ export function MyArticleList({ initialArticles }: MyArticleListProps) {
 
             {/* Actions */}
             <div className="flex flex-col gap-2 shrink-0">
-              <Link href={`/articles/${article.id}`}>
+              <Link href={`/dashboard/articles/${article.id}`}>
                 <Button variant="ghost" size="sm" className="w-full">
                   View
                 </Button>
