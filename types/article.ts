@@ -28,6 +28,20 @@ export interface MyArticle {
   updatedAt: Date;
 }
 
+export interface PaginatedArticles {
+  items: Article[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface PaginatedMyArticles {
+  items: MyArticle[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 export interface AuthorWithCount {
   id: string;
   name: string;

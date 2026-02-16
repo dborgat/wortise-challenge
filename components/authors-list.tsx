@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { AuthorWithCount } from '@/types/article';
 
 interface AuthorsListProps {
@@ -11,9 +12,10 @@ export function AuthorsList({ authors }: AuthorsListProps) {
     <div className="overflow-x-auto">
       <div className="flex gap-4 pb-2">
         {authors.map((author) => (
-          <div
+          <Link
             key={author.id}
-            className="flex-shrink-0 flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-3"
+            href={`/?q=${encodeURIComponent(author.name)}`}
+            className="flex-shrink-0 flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-400 transition-colors"
           >
             <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-semibold">
               {author.name.charAt(0).toUpperCase()}
@@ -24,7 +26,7 @@ export function AuthorsList({ authors }: AuthorsListProps) {
                 {author.articleCount} {author.articleCount === 1 ? 'article' : 'articles'}
               </p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

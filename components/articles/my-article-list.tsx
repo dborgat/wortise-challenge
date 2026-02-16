@@ -9,13 +9,15 @@ import { type MyArticle } from "@/types/article";
 
 interface MyArticleListProps {
   initialArticles: MyArticle[];
+  page: number;
+  totalPages: number;
 }
 
 /**
  * My articles list component
- * Displays user's own articles with edit/delete actions
+ * Displays user's own articles with edit/delete actions and pagination
  */
-export function MyArticleList({ initialArticles }: MyArticleListProps) {
+export function MyArticleList({ initialArticles, page, totalPages }: MyArticleListProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
 
@@ -35,7 +37,7 @@ export function MyArticleList({ initialArticles }: MyArticleListProps) {
     await deleteMutation.mutateAsync({ id });
   };
 
-  if (initialArticles.length === 0) {
+  if (initialArticles.length === 0 && page === 1) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 mb-4">
@@ -104,6 +106,39 @@ export function MyArticleList({ initialArticles }: MyArticleListProps) {
           </div>
         </div>
       ))}
+
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          {page > 1 ? (
+            <Link href={`/dashboard?page=${page - 1}`}>
+              <Button variant="secondary" size="sm">
+                Previous
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="secondary" size="sm" disabled>
+              Previous
+            </Button>
+          )}
+
+          <span className="text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </span>
+
+          {page < totalPages ? (
+            <Link href={`/dashboard?page=${page + 1}`}>
+              <Button variant="secondary" size="sm">
+                Next
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="secondary" size="sm" disabled>
+              Next
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

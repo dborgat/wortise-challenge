@@ -1,15 +1,24 @@
-import Link from 'next/link';
-import { createCaller } from '@/lib/trpc/server';
-import { Button } from '@/components/ui/button';
-import { MyArticleList } from '@/components/articles/my-article-list';
+import Link from "next/link";
+import { createCaller } from "@/lib/trpc/server";
+import { Button } from "@/components/ui/button";
+import { MyArticleList } from "@/components/articles/my-article-list";
+
+interface DashboardPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
 
 /**
  * Dashboard page
- * Shows user's articles
+ * Shows user's articles with pagination
  */
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
+
   const caller = await createCaller();
-  const articles = await caller.article.getMyArticles({ limit: 50 });
+  const result = await caller.article.getMyArticles({ page, limit: 3 });
 
   return (
     <div>
@@ -27,7 +36,11 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <MyArticleList initialArticles={articles} />
+      <MyArticleList
+        initialArticles={result.items}
+        page={result.page}
+        totalPages={result.totalPages}
+      />
     </div>
   );
 }

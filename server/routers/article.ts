@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
 import { TRPCError } from '@trpc/server';
 import { getArticlesCollection, getUsersCollection } from '@/server/db/collections';
-import type { Article, MyArticle } from '@/types/article';
+import type { Article, MyArticle, PaginatedArticles, PaginatedMyArticles } from '@/types/article';
 
 /**
  * Article router
@@ -15,17 +15,22 @@ export const articleRouter = router({
    */
   getAll: publicProcedure
     .input(z.object({
-      limit: z.number().min(1).max(100).optional().default(50),
+      page: z.number().min(1).optional().default(1),
+      limit: z.number().min(1).max(100).optional().default(6),
     }))
-    .query(async ({ input }): Promise<Article[]> => {
+    .query(async ({ input }): Promise<PaginatedArticles> => {
       const articles = await getArticlesCollection();
       const users = await getUsersCollection();
 
-      const docs = await articles
-        .find()
-        .sort({ createdAt: -1 })
-        .limit(input.limit)
-        .toArray();
+      const [docs, total] = await Promise.all([
+        articles
+          .find()
+          .sort({ createdAt: -1 })
+          .skip((input.page - 1) * input.limit)
+          .limit(input.limit)
+          .toArray(),
+        articles.countDocuments(),
+      ]);
 
       const authorIds = [...new Set(docs.map((d) => d.authorId.toHexString()))];
       const authorDocs = await users
@@ -33,20 +38,25 @@ export const articleRouter = router({
         .toArray();
       const authorMap = new Map(authorDocs.map((a) => [a._id.toHexString(), a]));
 
-      return docs.map((doc) => {
-        const author = authorMap.get(doc.authorId.toHexString());
-        return {
-          id: doc._id.toHexString(),
-          title: doc.title,
-          content: doc.content,
-          coverImage: doc.coverImage,
-          authorId: doc.authorId.toHexString(),
-          authorName: author?.name ?? 'Unknown',
-          authorEmail: author?.email ?? '',
-          createdAt: doc.createdAt,
-          updatedAt: doc.updatedAt,
-        };
-      });
+      return {
+        items: docs.map((doc) => {
+          const author = authorMap.get(doc.authorId.toHexString());
+          return {
+            id: doc._id.toHexString(),
+            title: doc.title,
+            content: doc.content,
+            coverImage: doc.coverImage,
+            authorId: doc.authorId.toHexString(),
+            authorName: author?.name ?? 'Unknown',
+            authorEmail: author?.email ?? '',
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+          };
+        }),
+        total,
+        page: input.page,
+        totalPages: Math.ceil(total / input.limit),
+      };
     }),
 
   /**
@@ -234,25 +244,36 @@ export const articleRouter = router({
    */
   getMyArticles: protectedProcedure
     .input(z.object({
-      limit: z.number().min(1).max(100).optional().default(50),
+      page: z.number().min(1).optional().default(1),
+      limit: z.number().min(1).max(100).optional().default(10),
     }))
-    .query(async ({ input, ctx }): Promise<MyArticle[]> => {
+    .query(async ({ input, ctx }): Promise<PaginatedMyArticles> => {
       const articles = await getArticlesCollection();
+      const filter = { authorId: new ObjectId(ctx.user.id) };
 
-      const docs = await articles
-        .find({ authorId: new ObjectId(ctx.user.id) })
-        .sort({ createdAt: -1 })
-        .limit(input.limit)
-        .toArray();
+      const [docs, total] = await Promise.all([
+        articles
+          .find(filter)
+          .sort({ createdAt: -1 })
+          .skip((input.page - 1) * input.limit)
+          .limit(input.limit)
+          .toArray(),
+        articles.countDocuments(filter),
+      ]);
 
-      return docs.map((doc) => ({
-        id: doc._id.toHexString(),
-        title: doc.title,
-        content: doc.content,
-        coverImage: doc.coverImage,
-        authorId: doc.authorId.toHexString(),
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-      }));
+      return {
+        items: docs.map((doc) => ({
+          id: doc._id.toHexString(),
+          title: doc.title,
+          content: doc.content,
+          coverImage: doc.coverImage,
+          authorId: doc.authorId.toHexString(),
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        })),
+        total,
+        page: input.page,
+        totalPages: Math.ceil(total / input.limit),
+      };
     }),
 });

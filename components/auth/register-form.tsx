@@ -28,20 +28,6 @@ export function RegisterForm() {
   });
 
   const registerMutation = trpc.auth.register.useMutation({
-    onSuccess: async (data) => {
-      // After successful registration, sign in with Better Auth
-      try {
-        await authClient.signIn.email({
-          email: data.user.email,
-          password: '', // Password already used in registration
-        });
-        
-        router.push('/dashboard');
-      } catch (err) {
-        // Registration succeeded but auto-login failed
-        router.push('/login');
-      }
-    },
     onError: (err) => {
       setError(err.message);
     },
@@ -50,6 +36,17 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterInput) => {
     setError('');
     await registerMutation.mutateAsync(data);
+
+    // Auto-login with the same credentials
+    try {
+      await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      });
+      router.push('/dashboard');
+    } catch {
+      router.push('/login');
+    }
   };
 
   return (

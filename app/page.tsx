@@ -6,9 +6,10 @@ import { ArticleCard } from '@/components/articles/article-card';
 import { Button } from '@/components/ui/button';
 import { SearchBar } from '@/components/search-bar';
 import { AuthorsList } from '@/components/authors-list';
+import type { Article } from '@/types/article';
 
 interface HomeProps {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }
 
 /**
@@ -16,16 +17,22 @@ interface HomeProps {
  * Shows all published articles with search and authors list
  */
 export default async function Home({ searchParams }: HomeProps) {
-  const { q } = await searchParams;
+  const params = await searchParams;
+  const q = params.q;
+  const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1);
   const caller = await createCaller();
 
-  const [articles, authors, session] = await Promise.all([
+  const [articlesResult, authors, session] = await Promise.all([
     q
       ? caller.article.search({ query: q })
-      : caller.article.getAll({ limit: 50 }),
+      : caller.article.getAll({ page, limit: 6 }),
     caller.auth.getAuthors(),
     auth.api.getSession({ headers: await headers() }),
   ]);
+
+  const isSearch = !!q;
+  const articles = isSearch ? (articlesResult as Article[]) : (articlesResult as { items: Article[]; page: number; totalPages: number }).items;
+  const totalPages = isSearch ? 1 : (articlesResult as { totalPages: number }).totalPages;
 
   const isLoggedIn = !!session?.user;
 
@@ -119,11 +126,46 @@ export default async function Home({ searchParams }: HomeProps) {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {articles.map((article, index) => (
-                <ArticleCard key={article.id} article={article} priority={index === 0} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {articles.map((article, index) => (
+                  <ArticleCard key={article.id} article={article} priority={index === 0} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {!isSearch && totalPages > 1 && (
+                <div className="flex items-center justify-between pt-8">
+                  {page > 1 ? (
+                    <Link href={`/?page=${page - 1}`}>
+                      <Button variant="secondary" size="sm">
+                        Previous
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="secondary" size="sm" disabled>
+                      Previous
+                    </Button>
+                  )}
+
+                  <span className="text-sm text-gray-600">
+                    Page {page} of {totalPages}
+                  </span>
+
+                  {page < totalPages ? (
+                    <Link href={`/?page=${page + 1}`}>
+                      <Button variant="secondary" size="sm">
+                        Next
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button variant="secondary" size="sm" disabled>
+                      Next
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
