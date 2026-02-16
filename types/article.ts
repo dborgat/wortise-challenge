@@ -27,3 +27,10 @@ export interface MyArticle {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface AuthorWithCount {
+  id: string;
+  name: string;
+  email: string;
+  articleCount: number;
+}

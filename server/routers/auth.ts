@@ -2,6 +2,8 @@ import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
 import { registerSchema, loginSchema } from '@/lib/validations/auth';
 import { auth } from '@/lib/auth';
 import { TRPCError } from '@trpc/server';
+import { getArticlesCollection, getUsersCollection } from '@/server/db/collections';
+import type { AuthorWithCount } from '@/types/article';
 
 /**
  * Auth router
@@ -64,5 +66,37 @@ export const authRouter = router({
   getProfile: protectedProcedure
     .query(async ({ ctx }) => {
       return ctx.user;
+    }),
+
+  /**
+   * Get all authors with their article counts
+   */
+  getAuthors: publicProcedure
+    .query(async (): Promise<AuthorWithCount[]> => {
+      const articles = await getArticlesCollection();
+      const users = await getUsersCollection();
+
+      // Aggregate article counts per author
+      const counts = await articles.aggregate<{ _id: string; count: number }>([
+        { $group: { _id: { $toString: '$authorId' }, count: { $sum: 1 } } },
+      ]).toArray();
+
+      const countMap = new Map(counts.map((c) => [c._id, c.count]));
+
+      // Fetch all users who have at least one article
+      const authorIds = counts.map((c) => c._id);
+      const { ObjectId } = await import('mongodb');
+      const authorDocs = await users
+        .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
+        .toArray();
+
+      return authorDocs
+        .map((doc) => ({
+          id: doc._id.toHexString(),
+          name: doc.name,
+          email: doc.email,
+          articleCount: countMap.get(doc._id.toHexString()) ?? 0,
+        }))
+        .sort((a, b) => b.articleCount - a.articleCount);
     }),
 });

@@ -168,6 +168,68 @@ export const articleRouter = router({
     }),
 
   /**
+   * Search articles by title, content, or author name (public)
+   */
+  search: publicProcedure
+    .input(z.object({
+      query: z.string().min(1).max(200),
+      limit: z.number().min(1).max(100).optional().default(50),
+    }))
+    .query(async ({ input }): Promise<Article[]> => {
+      const articles = await getArticlesCollection();
+      const users = await getUsersCollection();
+
+      // Phase 1: Find authors matching the query by name
+      const escapedQuery = input.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matchingAuthors = await users
+        .find({ name: { $regex: escapedQuery, $options: 'i' } })
+        .toArray();
+      const matchingAuthorIds = matchingAuthors.map((a) => a._id);
+
+      // Phase 2: Search articles by text index OR by matching author
+      const filter: Record<string, unknown> = {};
+      const conditions: Record<string, unknown>[] = [];
+
+      // Text search on title+content
+      conditions.push({ $text: { $search: input.query } });
+
+      // Articles by matching authors
+      if (matchingAuthorIds.length > 0) {
+        conditions.push({ authorId: { $in: matchingAuthorIds } });
+      }
+
+      filter.$or = conditions;
+
+      const docs = await articles
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .limit(input.limit)
+        .toArray();
+
+      // Phase 3: Resolve author names
+      const authorIds = [...new Set(docs.map((d) => d.authorId.toHexString()))];
+      const authorDocs = await users
+        .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
+        .toArray();
+      const authorMap = new Map(authorDocs.map((a) => [a._id.toHexString(), a]));
+
+      return docs.map((doc) => {
+        const author = authorMap.get(doc.authorId.toHexString());
+        return {
+          id: doc._id.toHexString(),
+          title: doc.title,
+          content: doc.content,
+          coverImage: doc.coverImage,
+          authorId: doc.authorId.toHexString(),
+          authorName: author?.name ?? 'Unknown',
+          authorEmail: author?.email ?? '',
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        };
+      });
+    }),
+
+  /**
    * Get articles by current user (protected)
    */
   getMyArticles: protectedProcedure

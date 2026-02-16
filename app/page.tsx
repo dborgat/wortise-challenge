@@ -4,18 +4,29 @@ import { createCaller } from '@/lib/trpc/server';
 import { auth } from '@/lib/auth';
 import { ArticleCard } from '@/components/articles/article-card';
 import { Button } from '@/components/ui/button';
+import { SearchBar } from '@/components/search-bar';
+import { AuthorsList } from '@/components/authors-list';
+
+interface HomeProps {
+  searchParams: Promise<{ q?: string }>;
+}
 
 /**
  * Home page
- * Shows all published articles
+ * Shows all published articles with search and authors list
  */
-export default async function Home() {
+export default async function Home({ searchParams }: HomeProps) {
+  const { q } = await searchParams;
   const caller = await createCaller();
-  const articles = await caller.article.getAll({ limit: 50 });
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const [articles, authors, session] = await Promise.all([
+    q
+      ? caller.article.search({ query: q })
+      : caller.article.getAll({ limit: 50 }),
+    caller.auth.getAuthors(),
+    auth.api.getSession({ headers: await headers() }),
+  ]);
+
   const isLoggedIn = !!session?.user;
 
   return (
@@ -73,26 +84,48 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Articles Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Articles</h2>
+      {/* Main content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
+        {/* Search */}
+        <SearchBar defaultValue={q} />
 
-        {articles.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No articles yet. Be the first to write!</p>
-            <Link href={isLoggedIn ? '/dashboard/articles/new' : '/register'}>
-              <Button variant="primary">
-                {isLoggedIn ? 'Create Your First Article' : 'Create an Account'}
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article, index) => (
-              <ArticleCard key={article.id} article={article} priority={index === 0} />
-            ))}
-          </div>
+        {/* Authors */}
+        {authors.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Authors</h2>
+            <AuthorsList authors={authors} />
+          </section>
         )}
+
+        {/* Articles */}
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            {q ? `Results for "${q}"` : 'Latest Articles'}
+          </h2>
+
+          {articles.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-4">
+                {q
+                  ? 'No articles found. Try a different search.'
+                  : 'No articles yet. Be the first to write!'}
+              </p>
+              {!q && (
+                <Link href={isLoggedIn ? '/dashboard/articles/new' : '/register'}>
+                  <Button variant="primary">
+                    {isLoggedIn ? 'Create Your First Article' : 'Create an Account'}
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article, index) => (
+                <ArticleCard key={article.id} article={article} priority={index === 0} />
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
