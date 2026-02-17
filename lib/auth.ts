@@ -11,9 +11,10 @@ if (!process.env.BETTER_AUTH_SECRET) {
 
 // Make BETTER_AUTH_URL optional for build time
 const baseURL =
-  process.env.BETTER_AUTH_URL || process.env.VERCEL_URL
+  process.env.BETTER_AUTH_URL ||
+  (process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+    : "http://localhost:3000");
 
 /**
  * Better Auth instance
@@ -43,8 +44,8 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL,
   trustedOrigins: [
-    baseURL,
-    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+    "http://localhost:3000",
+    "https://wortise-challenge-nu.vercel.app", // Agrégala explícitamente por seguridad
   ].filter(Boolean),
 });
 
