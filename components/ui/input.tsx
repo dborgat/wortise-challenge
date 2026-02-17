@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, forwardRef } from "react";
+import { InputHTMLAttributes, forwardRef, useId } from "react";
 import { cn } from "@/lib/utils";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -11,17 +11,29 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  * Input component with label and error handling
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, type = "text", ...props }, ref) => {
+  ({ className, label, error, helperText, type = "text", id: propId, ...props }, ref) => {
+    const generatedId = useId();
+    const id = propId ?? generatedId;
+    const errorId = error ? `${id}-error` : undefined;
+    const helperId = helperText && !error ? `${id}-helper` : undefined;
+    const describedBy = errorId ?? helperId;
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5">
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5"
+          >
             {label}
           </label>
         )}
         <input
           ref={ref}
+          id={id}
           type={type}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
           className={cn(
             "w-full px-4 py-2.5 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border rounded-md transition-colors",
             "placeholder:text-gray-400 dark:placeholder:text-gray-500",
@@ -34,9 +46,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           {...props}
         />
-        {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p id={errorId} className="mt-1.5 text-sm text-red-600" role="alert">
+            {error}
+          </p>
+        )}
         {helperText && !error && (
-          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+          <p id={helperId} className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+            {helperText}
+          </p>
         )}
       </div>
     );

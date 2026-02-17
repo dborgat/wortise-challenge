@@ -1,9 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { trpc } from "@/lib/trpc/client";
+import { useArticleMutations } from "@/hooks/use-article-mutations";
 import { Button } from "@/components/ui/button";
 import { type MyArticle } from "@/types/article";
 import { useTranslations, useLocale } from "next-intl";
@@ -15,26 +15,17 @@ interface MyArticleListProps {
 }
 
 export function MyArticleList({ initialArticles, page, totalPages }: MyArticleListProps) {
-  const router = useRouter();
-  const utils = trpc.useUtils();
+  const { deleteMutation } = useArticleMutations();
   const t = useTranslations("common");
   const tArticle = useTranslations("article");
   const locale = useLocale();
 
-  const deleteMutation = trpc.article.delete.useMutation({
-    onSuccess: () => {
-      utils.article.getMyArticles.invalidate();
-      router.refresh();
-    },
-  });
-
-  const handleDelete = async (id: string, title: string) => {
+  const handleDelete = useCallback(async (id: string, title: string) => {
     if (!confirm(tArticle("deleteConfirm", { title }))) {
       return;
     }
-
     await deleteMutation.mutateAsync({ id });
-  };
+  }, [deleteMutation, tArticle]);
 
   if (initialArticles.length === 0 && page === 1) {
     return (
@@ -56,15 +47,15 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
           key={article.id}
           className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
         >
-          <div className="p-5 flex gap-4">
+          <div className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4">
             {/* Thumbnail */}
-            <div className="relative w-32 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div className="relative w-full h-40 sm:w-32 sm:h-24 shrink-0 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
               <Image
                 src={article.coverImage}
                 alt={article.title}
                 fill
                 className="object-cover"
-                sizes="128px"
+                sizes="(max-width: 640px) 100vw, 128px"
               />
             </div>
 
@@ -74,7 +65,7 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
                 {article.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
-                {article.content.slice(0, 120)}...
+                {article.content}
               </p>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 {tArticle("created", {
@@ -84,7 +75,7 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col gap-2 shrink-0">
+            <div className="flex flex-row sm:flex-col gap-2 shrink-0">
               <Link href={`/dashboard/articles/${article.id}`}>
                 <Button variant="ghost" size="sm" className="w-full">
                   {t("view")}

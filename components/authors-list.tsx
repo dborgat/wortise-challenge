@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { AuthorWithCount } from '@/types/article';
@@ -6,7 +7,7 @@ interface AuthorsListProps {
   authors: AuthorWithCount[];
 }
 
-export function AuthorsList({ authors }: AuthorsListProps) {
+export const AuthorsList = memo(function AuthorsList({ authors }: AuthorsListProps) {
   const t = useTranslations('home');
 
   if (authors.length === 0) return null;
@@ -34,4 +35,4 @@ export function AuthorsList({ authors }: AuthorsListProps) {
       </div>
     </div>
   );
-}
+});

@@ -1,5 +1,6 @@
+import { ObjectId } from 'mongodb';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
-import { registerSchema, loginSchema } from '@/lib/validations/auth';
+import { registerSchema } from '@/lib/validations/auth';
 import { auth } from '@/lib/auth';
 import { TRPCError } from '@trpc/server';
 import { getArticlesCollection, getUsersCollection } from '@/server/db/collections';
@@ -47,8 +48,12 @@ export const authRouter = router({
           success: true,
           user: result.user,
         };
-      } catch (error: any) {
-        if (error.message?.includes('already exists')) {
+      } catch (error: unknown) {
+        if (error instanceof TRPCError) throw error;
+
+        const message = error instanceof Error ? error.message : String(error);
+
+        if (message.includes('already exists')) {
           throw new TRPCError({
             code: 'CONFLICT',
             message: t('emailAlreadyExists'),
@@ -57,7 +62,7 @@ export const authRouter = router({
 
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: error.message || t('failedToCreate'),
+          message: message || t('failedToCreate'),
         });
       }
     }),
@@ -78,18 +83,20 @@ export const authRouter = router({
       const articles = await getArticlesCollection();
       const users = await getUsersCollection();
 
-      // Aggregate article counts per author
-      const counts = await articles.aggregate<{ _id: string; count: number }>([
-        { $group: { _id: { $toString: '$authorId' }, count: { $sum: 1 } } },
+      // Aggregate article counts per author using ObjectId directly
+      const counts = await articles.aggregate<{ _id: ObjectId; count: number }>([
+        { $group: { _id: '$authorId', count: { $sum: 1 } } },
       ]).toArray();
 
-      const countMap = new Map(counts.map((c) => [c._id, c.count]));
+      const countMap = new Map(counts.map((c) => [c._id.toHexString(), c.count]));
 
       // Fetch all users who have at least one article
       const authorIds = counts.map((c) => c._id);
-      const { ObjectId } = await import('mongodb');
       const authorDocs = await users
-        .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
+        .find(
+          { _id: { $in: authorIds } },
+          { projection: { name: 1, email: 1 } },
+        )
         .toArray();
 
       return authorDocs

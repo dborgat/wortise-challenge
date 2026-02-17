@@ -41,8 +41,8 @@ export function LoginForm() {
 
       router.push('/dashboard');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message || tVal('loginError'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : tVal('loginError'));
     }
   };
 

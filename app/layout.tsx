@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { TRPCProvider } from "@/lib/trpc/client";
+import { ToastProvider } from "@/components/ui/toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,7 +38,9 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
             <TRPCProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </TRPCProvider>
           </NextIntlClientProvider>
         </ThemeProvider>

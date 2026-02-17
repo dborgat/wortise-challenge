@@ -39,7 +39,7 @@ export const auth = betterAuth({
   },
   advanced: {
     generateId: false,
-  } as any,
+  } as Record<string, unknown>,
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [

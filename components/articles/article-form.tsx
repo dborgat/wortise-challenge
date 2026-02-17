@@ -1,13 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import {
   createArticleSchema,
   type CreateArticleInput,
 } from "@/lib/validations/article";
-import { trpc } from "@/lib/trpc/client";
+import { useArticleMutations } from "@/hooks/use-article-mutations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +24,7 @@ interface ArticleFormProps {
 }
 
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
-  const router = useRouter();
+  const { createMutation, updateMutation, router } = useArticleMutations();
   const isEditing = !!article;
   const t = useTranslations("article");
   const tCommon = useTranslations("common");
@@ -44,28 +44,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       : undefined,
   });
 
-  const createMutation = trpc.article.create.useMutation({
-    onSuccess: () => {
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push("/dashboard");
-      }
-      router.refresh();
-    },
-  });
-
-  const updateMutation = trpc.article.update.useMutation({
-    onSuccess: () => {
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        router.push("/dashboard");
-      }
-      router.refresh();
-    },
-  });
-
   const onSubmit = async (data: CreateArticleInput) => {
     if (isEditing) {
       await updateMutation.mutateAsync({
@@ -75,9 +53,18 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     } else {
       await createMutation.mutateAsync(data);
     }
+
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      router.push("/dashboard");
+    }
   };
 
-  const error = createMutation.error || updateMutation.error;
+  const error = useMemo(
+    () => createMutation.error || updateMutation.error,
+    [createMutation.error, updateMutation.error],
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

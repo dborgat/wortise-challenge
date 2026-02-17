@@ -9,7 +9,6 @@ import { AuthorsList } from '@/components/authors-list';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageToggle } from '@/components/language-toggle';
 import { getTranslations } from 'next-intl/server';
-import type { Article } from '@/types/article';
 
 interface HomeProps {
   searchParams: Promise<{ q?: string; page?: string }>;
@@ -32,8 +31,8 @@ export default async function Home({ searchParams }: HomeProps) {
   ]);
 
   const isSearch = !!q;
-  const articles = isSearch ? (articlesResult as Article[]) : (articlesResult as { items: Article[]; page: number; totalPages: number }).items;
-  const totalPages = isSearch ? 1 : (articlesResult as { totalPages: number }).totalPages;
+  const articles = Array.isArray(articlesResult) ? articlesResult : articlesResult.items;
+  const totalPages = Array.isArray(articlesResult) ? 1 : articlesResult.totalPages;
 
   const isLoggedIn = !!session?.user;
 
@@ -80,9 +79,9 @@ export default async function Home({ searchParams }: HomeProps) {
       </header>
 
       {/* Hero */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-16">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-10 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">{tHome('welcome')}</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{tHome('welcome')}</h2>
           <p className="text-xl text-gray-300 mb-8">
             {tHome('subtitle')}
           </p>

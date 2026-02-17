@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { type Article } from "@/types/article";
@@ -8,10 +9,8 @@ interface ArticleCardProps {
   priority?: boolean;
 }
 
-export function ArticleCard({ article, priority = false }: ArticleCardProps) {
+export const ArticleCard = memo(function ArticleCard({ article, priority = false }: ArticleCardProps) {
   const locale = useLocale();
-  const excerpt =
-    article.content.slice(0, 150) + (article.content.length > 150 ? "..." : "");
 
   return (
     <Link
@@ -36,7 +35,7 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
           {article.title}
         </h3>
 
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">{excerpt}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">{article.content}</p>
 
         {/* Author & Date */}
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
@@ -54,4 +53,4 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
       </div>
     </Link>
   );
-}
+});

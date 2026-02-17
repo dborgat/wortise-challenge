@@ -3,8 +3,72 @@ import { ObjectId } from 'mongodb';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
 import { TRPCError } from '@trpc/server';
 import { getArticlesCollection, getUsersCollection } from '@/server/db/collections';
+import type { ArticleDocument } from '@/server/db/collections';
 import { getTranslations } from 'next-intl/server';
+import { createArticleSchema, updateArticleSchema } from '@/lib/validations/article';
+import { objectIdSchema } from '@/lib/validations/shared';
 import type { Article, MyArticle, PaginatedArticles, PaginatedMyArticles } from '@/types/article';
+
+const EXCERPT_MAX_LENGTH = 150;
+
+/**
+ * Truncate content into an excerpt
+ */
+function truncate(text: string, max = EXCERPT_MAX_LENGTH): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max) + '...';
+}
+
+/**
+ * Map a MongoDB article document + author info to an Article
+ */
+function mapDocToArticle(
+  doc: ArticleDocument,
+  author: { name: string; email: string } | undefined,
+  options?: { excerptOnly?: boolean },
+): Article {
+  return {
+    id: doc._id.toHexString(),
+    title: doc.title,
+    content: options?.excerptOnly ? truncate(doc.content) : doc.content,
+    coverImage: doc.coverImage,
+    authorId: doc.authorId.toHexString(),
+    authorName: author?.name ?? 'Unknown',
+    authorEmail: author?.email ?? '',
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  };
+}
+
+/**
+ * Map a MongoDB article document to a MyArticle (no author info)
+ */
+function mapDocToMyArticle(doc: ArticleDocument, options?: { excerptOnly?: boolean }): MyArticle {
+  return {
+    id: doc._id.toHexString(),
+    title: doc.title,
+    content: options?.excerptOnly ? truncate(doc.content) : doc.content,
+    coverImage: doc.coverImage,
+    authorId: doc.authorId.toHexString(),
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  };
+}
+
+/**
+ * Resolve author map from a list of author ObjectIds
+ */
+async function resolveAuthors(authorIds: string[]) {
+  const users = await getUsersCollection();
+  const uniqueIds = [...new Set(authorIds)];
+  const authorDocs = await users
+    .find(
+      { _id: { $in: uniqueIds.map((id) => new ObjectId(id)) } },
+      { projection: { name: 1, email: 1 } },
+    )
+    .toArray();
+  return new Map(authorDocs.map((a) => [a._id.toHexString(), a]));
+}
 
 /**
  * Article router
@@ -16,16 +80,15 @@ export const articleRouter = router({
    */
   getAll: publicProcedure
     .input(z.object({
-      page: z.number().min(1).optional().default(1),
-      limit: z.number().min(1).max(100).optional().default(6),
+      page: z.number().int().min(1).optional().default(1),
+      limit: z.number().int().min(1).max(100).optional().default(6),
     }))
     .query(async ({ input }): Promise<PaginatedArticles> => {
       const articles = await getArticlesCollection();
-      const users = await getUsersCollection();
 
       const [docs, total] = await Promise.all([
         articles
-          .find()
+          .find({})
           .sort({ createdAt: -1 })
           .skip((input.page - 1) * input.limit)
           .limit(input.limit)
@@ -33,26 +96,12 @@ export const articleRouter = router({
         articles.countDocuments(),
       ]);
 
-      const authorIds = [...new Set(docs.map((d) => d.authorId.toHexString()))];
-      const authorDocs = await users
-        .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
-        .toArray();
-      const authorMap = new Map(authorDocs.map((a) => [a._id.toHexString(), a]));
+      const authorMap = await resolveAuthors(docs.map((d) => d.authorId.toHexString()));
 
       return {
         items: docs.map((doc) => {
           const author = authorMap.get(doc.authorId.toHexString());
-          return {
-            id: doc._id.toHexString(),
-            title: doc.title,
-            content: doc.content,
-            coverImage: doc.coverImage,
-            authorId: doc.authorId.toHexString(),
-            authorName: author?.name ?? 'Unknown',
-            authorEmail: author?.email ?? '',
-            createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt,
-          };
+          return mapDocToArticle(doc, author, { excerptOnly: true });
         }),
         total,
         page: input.page,
@@ -65,40 +114,27 @@ export const articleRouter = router({
    */
   getById: publicProcedure
     .input(z.object({
-      id: z.string(),
+      id: objectIdSchema,
     }))
     .query(async ({ input }): Promise<Article | null> => {
-      if (!ObjectId.isValid(input.id)) return null;
-
       const articles = await getArticlesCollection();
       const doc = await articles.findOne({ _id: new ObjectId(input.id) });
       if (!doc) return null;
 
       const users = await getUsersCollection();
-      const author = await users.findOne({ _id: doc.authorId });
+      const author = await users.findOne(
+        { _id: doc.authorId },
+        { projection: { name: 1, email: 1 } },
+      );
 
-      return {
-        id: doc._id.toHexString(),
-        title: doc.title,
-        content: doc.content,
-        coverImage: doc.coverImage,
-        authorId: doc.authorId.toHexString(),
-        authorName: author?.name ?? 'Unknown',
-        authorEmail: author?.email ?? '',
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-      };
+      return mapDocToArticle(doc, author ?? undefined);
     }),
 
   /**
    * Create article (protected)
    */
   create: protectedProcedure
-    .input(z.object({
-      title: z.string().min(3, 'Title must be at least 3 characters'),
-      content: z.string().min(10, 'Content must be at least 10 characters'),
-      coverImage: z.string().url('Must be a valid URL'),
-    }))
+    .input(createArticleSchema)
     .mutation(async ({ input, ctx }) => {
       const articles = await getArticlesCollection();
       const now = new Date();
@@ -120,21 +156,15 @@ export const articleRouter = router({
    * Update article (protected - must be the author)
    */
   update: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      title: z.string().min(3).optional(),
-      content: z.string().min(10).optional(),
-      coverImage: z.string().url().optional(),
-    }))
+    .input(updateArticleSchema.extend({ id: objectIdSchema }))
     .mutation(async ({ input, ctx }) => {
       const t = await getTranslations('errors');
 
-      if (!ObjectId.isValid(input.id)) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
-      }
-
       const articles = await getArticlesCollection();
-      const doc = await articles.findOne({ _id: new ObjectId(input.id) });
+      const doc = await articles.findOne(
+        { _id: new ObjectId(input.id) },
+        { projection: { authorId: 1 } },
+      );
 
       if (!doc) {
         throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
@@ -158,17 +188,16 @@ export const articleRouter = router({
    */
   delete: protectedProcedure
     .input(z.object({
-      id: z.string(),
+      id: objectIdSchema,
     }))
     .mutation(async ({ input, ctx }) => {
       const t = await getTranslations('errors');
 
-      if (!ObjectId.isValid(input.id)) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
-      }
-
       const articles = await getArticlesCollection();
-      const doc = await articles.findOne({ _id: new ObjectId(input.id) });
+      const doc = await articles.findOne(
+        { _id: new ObjectId(input.id) },
+        { projection: { authorId: 1 } },
+      );
 
       if (!doc) {
         throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
@@ -188,7 +217,7 @@ export const articleRouter = router({
   search: publicProcedure
     .input(z.object({
       query: z.string().min(1).max(200),
-      limit: z.number().min(1).max(100).optional().default(50),
+      limit: z.number().int().min(1).max(100).optional().default(50),
     }))
     .query(async ({ input }): Promise<Article[]> => {
       const articles = await getArticlesCollection();
@@ -197,50 +226,34 @@ export const articleRouter = router({
       // Phase 1: Find authors matching the query by name
       const escapedQuery = input.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const matchingAuthors = await users
-        .find({ name: { $regex: escapedQuery, $options: 'i' } })
+        .find(
+          { name: { $regex: escapedQuery, $options: 'i' } },
+          { projection: { _id: 1 } },
+        )
         .toArray();
       const matchingAuthorIds = matchingAuthors.map((a) => a._id);
 
       // Phase 2: Search articles by text index OR by matching author
-      const filter: Record<string, unknown> = {};
-      const conditions: Record<string, unknown>[] = [];
+      const conditions: object[] = [
+        { $text: { $search: input.query } },
+      ];
 
-      // Text search on title+content
-      conditions.push({ $text: { $search: input.query } });
-
-      // Articles by matching authors
       if (matchingAuthorIds.length > 0) {
         conditions.push({ authorId: { $in: matchingAuthorIds } });
       }
 
-      filter.$or = conditions;
-
       const docs = await articles
-        .find(filter)
+        .find({ $or: conditions })
         .sort({ createdAt: -1 })
         .limit(input.limit)
         .toArray();
 
       // Phase 3: Resolve author names
-      const authorIds = [...new Set(docs.map((d) => d.authorId.toHexString()))];
-      const authorDocs = await users
-        .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
-        .toArray();
-      const authorMap = new Map(authorDocs.map((a) => [a._id.toHexString(), a]));
+      const authorMap = await resolveAuthors(docs.map((d) => d.authorId.toHexString()));
 
       return docs.map((doc) => {
         const author = authorMap.get(doc.authorId.toHexString());
-        return {
-          id: doc._id.toHexString(),
-          title: doc.title,
-          content: doc.content,
-          coverImage: doc.coverImage,
-          authorId: doc.authorId.toHexString(),
-          authorName: author?.name ?? 'Unknown',
-          authorEmail: author?.email ?? '',
-          createdAt: doc.createdAt,
-          updatedAt: doc.updatedAt,
-        };
+        return mapDocToArticle(doc, author, { excerptOnly: true });
       });
     }),
 
@@ -249,8 +262,8 @@ export const articleRouter = router({
    */
   getMyArticles: protectedProcedure
     .input(z.object({
-      page: z.number().min(1).optional().default(1),
-      limit: z.number().min(1).max(100).optional().default(10),
+      page: z.number().int().min(1).optional().default(1),
+      limit: z.number().int().min(1).max(100).optional().default(10),
     }))
     .query(async ({ input, ctx }): Promise<PaginatedMyArticles> => {
       const articles = await getArticlesCollection();
@@ -267,15 +280,7 @@ export const articleRouter = router({
       ]);
 
       return {
-        items: docs.map((doc) => ({
-          id: doc._id.toHexString(),
-          title: doc.title,
-          content: doc.content,
-          coverImage: doc.coverImage,
-          authorId: doc.authorId.toHexString(),
-          createdAt: doc.createdAt,
-          updatedAt: doc.updatedAt,
-        })),
+        items: docs.map((doc) => mapDocToMyArticle(doc, { excerptOnly: true })),
         total,
         page: input.page,
         totalPages: Math.ceil(total / input.limit),

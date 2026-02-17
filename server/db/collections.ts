@@ -90,6 +90,7 @@ export async function initializeIndexes() {
   
   // Articles collection indexes
   await db.collection(COLLECTIONS.ARTICLES).createIndex({ authorId: 1 });
+  await db.collection(COLLECTIONS.ARTICLES).createIndex({ authorId: 1, createdAt: -1 });
   await db.collection(COLLECTIONS.ARTICLES).createIndex({ title: 'text', content: 'text' });
   await db.collection(COLLECTIONS.ARTICLES).createIndex({ createdAt: -1 });
   
