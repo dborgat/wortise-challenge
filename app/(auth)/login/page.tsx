@@ -1,27 +1,26 @@
 import { LoginForm } from "@/components/auth/login-form";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-/**
- * Login page
- * Public route for user authentication
- */
-export default function LoginPage() {
+export default async function LoginPage() {
+  const t = await getTranslations("auth");
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 px-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">CMS</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">CMS</h1>
           </Link>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome back
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            {t("welcomeBack")}
           </h2>
-          <p className="text-gray-600">Sign in to continue to your dashboard</p>
+          <p className="text-gray-600 dark:text-gray-400">{t("signInSubtitle")}</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
           <LoginForm />
         </div>
       </div>

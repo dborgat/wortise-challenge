@@ -1,0 +1,100 @@
+{
+  "common": {
+    "cms": "CMS",
+    "dashboard": "Panel",
+    "newArticle": "Nuevo Artículo",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
+    "loading": "Cargando...",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {current} de {total}",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "search": "Buscar",
+    "viewAll": "Ver Todos los Artículos",
+    "startWriting": "Comenzar a Escribir",
+    "myArticles": "Mis Artículos",
+    "browseAll": "Ver Todos",
+    "backToArticles": "← Volver a Artículos"
+  },
+  "home": {
+    "welcome": "Bienvenido a CMS",
+    "subtitle": "Descubre historias, ideas y conocimiento de escritores sobre cualquier tema",
+    "latestArticles": "Últimos Artículos",
+    "resultsFor": "Resultados para \"{query}\"",
+    "noArticles": "Aún no hay artículos. ¡Sé el primero en escribir!",
+    "noResults": "No se encontraron artículos. Intenta otra búsqueda.",
+    "createFirstArticle": "Crea Tu Primer Artículo",
+    "createAccount": "Crear una Cuenta",
+    "authors": "Autores",
+    "articleCount": "{count, plural, one {# artículo} other {# artículos}}"
+  },
+  "search": {
+    "placeholder": "Buscar artículos o autores..."
+  },
+  "article": {
+    "createTitle": "Crear Nuevo Artículo",
+    "createSubtitle": "Comparte tus ideas con el mundo",
+    "editTitle": "Editar Artículo",
+    "editSubtitle": "Actualiza el contenido de tu artículo",
+    "publishButton": "Publicar Artículo",
+    "updateButton": "Actualizar Artículo",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Ingresa el título del artículo",
+    "coverImageLabel": "URL de Imagen de Portada",
+    "coverImagePlaceholder": "https://example.com/image.jpg",
+    "coverImageHelper": "Debe ser una URL de imagen válida (jpg, jpeg, png, gif, webp)",
+    "contentLabel": "Contenido",
+    "contentPlaceholder": "Escribe el contenido de tu artículo aquí...",
+    "manageSubtitle": "Administra y edita tus artículos publicados",
+    "noArticles": "Aún no has creado ningún artículo.",
+    "createFirst": "Crea Tu Primer Artículo",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar \"{title}\"?",
+    "created": "Creado {date}"
+  },
+  "auth": {
+    "welcomeBack": "Bienvenido de nuevo",
+    "signInSubtitle": "Inicia sesión para continuar a tu panel",
+    "createYourAccount": "Crea tu cuenta",
+    "registerSubtitle": "Comienza a escribir y compartir tus artículos",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "juan@ejemplo.com",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "••••••••",
+    "passwordHelper": "Al menos 8 caracteres con mayúscula, minúscula y número",
+    "nameLabel": "Nombre Completo",
+    "namePlaceholder": "Juan Pérez",
+    "signInButton": "Iniciar Sesión",
+    "createAccountButton": "Crear Cuenta",
+    "noAccount": "¿No tienes una cuenta?",
+    "createOne": "Crea una",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "signInLink": "Inicia sesión",
+    "termsNotice": "Al crear una cuenta, aceptas nuestros Términos de Servicio"
+  },
+  "validation": {
+    "invalidCredentials": "Credenciales inválidas",
+    "loginError": "Ocurrió un error durante el inicio de sesión",
+    "emailAlreadyExists": "Ya existe una cuenta con este correo electrónico",
+    "failedToCreate": "Error al crear la cuenta"
+  },
+  "errors": {
+    "somethingWentWrong": "Algo salió mal",
+    "tryAgain": "Intentar de nuevo",
+    "pageNotFound": "Página no encontrada",
+    "pageNotFoundDescription": "La página que buscas no existe.",
+    "goHome": "Ir al inicio",
+    "articleNotFound": "Artículo no encontrado",
+    "onlyEditOwn": "Solo puedes editar tus propios artículos",
+    "onlyDeleteOwn": "Solo puedes eliminar tus propios artículos"
+  },
+  "language": {
+    "label": "Idioma",
+    "en": "English",
+    "es": "Español"
+  }
+}

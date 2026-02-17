@@ -26,7 +26,7 @@ export async function createContext(opts?: FetchCreateContextFnOptions) {
           email: session.user.email,
           name: session.user.name,
           emailVerified: session.user.emailVerified,
-          image: session.user.image,
+          image: session.user.image ?? undefined,
           createdAt: session.user.createdAt,
           updatedAt: session.user.updatedAt,
         };

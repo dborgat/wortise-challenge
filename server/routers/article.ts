@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { router, publicProcedure, protectedProcedure } from '@/lib/trpc/init';
 import { TRPCError } from '@trpc/server';
 import { getArticlesCollection, getUsersCollection } from '@/server/db/collections';
+import { getTranslations } from 'next-intl/server';
 import type { Article, MyArticle, PaginatedArticles, PaginatedMyArticles } from '@/types/article';
 
 /**
@@ -126,19 +127,21 @@ export const articleRouter = router({
       coverImage: z.string().url().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      const t = await getTranslations('errors');
+
       if (!ObjectId.isValid(input.id)) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
       }
 
       const articles = await getArticlesCollection();
       const doc = await articles.findOne({ _id: new ObjectId(input.id) });
 
       if (!doc) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
       }
 
       if (doc.authorId.toHexString() !== ctx.user.id) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only edit your own articles' });
+        throw new TRPCError({ code: 'FORBIDDEN', message: t('onlyEditOwn') });
       }
 
       const { id, ...updates } = input;
@@ -158,19 +161,21 @@ export const articleRouter = router({
       id: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
+      const t = await getTranslations('errors');
+
       if (!ObjectId.isValid(input.id)) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
       }
 
       const articles = await getArticlesCollection();
       const doc = await articles.findOne({ _id: new ObjectId(input.id) });
 
       if (!doc) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Article not found' });
+        throw new TRPCError({ code: 'NOT_FOUND', message: t('articleNotFound') });
       }
 
       if (doc.authorId.toHexString() !== ctx.user.id) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only delete your own articles' });
+        throw new TRPCError({ code: 'FORBIDDEN', message: t('onlyDeleteOwn') });
       }
 
       await articles.deleteOne({ _id: new ObjectId(input.id) });

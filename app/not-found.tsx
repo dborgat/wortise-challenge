@@ -1,18 +1,19 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { getTranslations } from "next-intl/server";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = await getTranslations("errors");
+
   return (
     <div className="min-h-screen flex items-center justify-center p-8 font-(family-name:--font-geist-sans)">
       <div className="text-center max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Page not found</h2>
-        <p className="text-gray-600 mb-6">
-          The page you are looking for does not exist.
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">{t("pageNotFound")}</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          {t("pageNotFoundDescription")}
         </p>
-        <Link
-          href="/"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-block"
-        >
-          Go home
+        <Link href="/">
+          <Button>{t("goHome")}</Button>
         </Link>
       </div>
     </div>

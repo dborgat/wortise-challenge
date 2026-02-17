@@ -38,8 +38,8 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    generateId: false, // Let MongoDB generate IDs
-  },
+    generateId: false,
+  } as any,
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [

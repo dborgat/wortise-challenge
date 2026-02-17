@@ -11,30 +11,23 @@ import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from "next-intl";
 
 interface ArticleFormProps {
-  /**
-   * Article data for editing (optional)
-   */
   article?: {
     id: string;
     title: string;
     content: string;
     coverImage: string;
   };
-  /**
-   * Called when form is successfully submitted
-   */
   onSuccess?: () => void;
 }
 
-/**
- * Article form component
- * Handles both create and edit modes
- */
 export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   const router = useRouter();
   const isEditing = !!article;
+  const t = useTranslations("article");
+  const tCommon = useTranslations("common");
 
   const {
     register,
@@ -51,7 +44,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
       : undefined,
   });
 
-  // Create mutation
   const createMutation = trpc.article.create.useMutation({
     onSuccess: () => {
       if (onSuccess) {
@@ -63,7 +55,6 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
     },
   });
 
-  // Update mutation
   const updateMutation = trpc.article.update.useMutation({
     onSuccess: () => {
       if (onSuccess) {
@@ -91,31 +82,31 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Input
-        label="Title"
-        placeholder="Enter article title"
+        label={t("titleLabel")}
+        placeholder={t("titlePlaceholder")}
         error={errors.title?.message}
         {...register("title")}
       />
 
       <Input
-        label="Cover Image URL"
+        label={t("coverImageLabel")}
         type="url"
-        placeholder="https://example.com/image.jpg"
-        helperText="Must be a valid image URL (jpg, jpeg, png, gif, webp)"
+        placeholder={t("coverImagePlaceholder")}
+        helperText={t("coverImageHelper")}
         error={errors.coverImage?.message}
         {...register("coverImage")}
       />
 
       <Textarea
-        label="Content"
-        placeholder="Write your article content here..."
+        label={t("contentLabel")}
+        placeholder={t("contentPlaceholder")}
         rows={12}
         error={errors.content?.message}
         {...register("content")}
       />
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
           {error.message}
         </div>
       )}
@@ -127,7 +118,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           size="lg"
           isLoading={isSubmitting}
         >
-          {isEditing ? "Update Article" : "Publish Article"}
+          {isEditing ? t("updateButton") : t("publishButton")}
         </Button>
 
         <Button
@@ -136,7 +127,7 @@ export function ArticleForm({ article, onSuccess }: ArticleFormProps) {
           size="lg"
           onClick={() => router.back()}
         >
-          Cancel
+          {tCommon("cancel")}
         </Button>
       </div>
     </form>

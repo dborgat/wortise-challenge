@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
 import { type MyArticle } from "@/types/article";
+import { useTranslations, useLocale } from "next-intl";
 
 interface MyArticleListProps {
   initialArticles: MyArticle[];
@@ -13,24 +14,22 @@ interface MyArticleListProps {
   totalPages: number;
 }
 
-/**
- * My articles list component
- * Displays user's own articles with edit/delete actions and pagination
- */
 export function MyArticleList({ initialArticles, page, totalPages }: MyArticleListProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  const t = useTranslations("common");
+  const tArticle = useTranslations("article");
+  const locale = useLocale();
 
   const deleteMutation = trpc.article.delete.useMutation({
     onSuccess: () => {
-      // Invalidate and refetch
       utils.article.getMyArticles.invalidate();
       router.refresh();
     },
   });
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) {
+    if (!confirm(tArticle("deleteConfirm", { title }))) {
       return;
     }
 
@@ -40,11 +39,11 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
   if (initialArticles.length === 0 && page === 1) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">
-          You haven&apos;t created any articles yet.
+        <p className="text-gray-500 dark:text-gray-400 mb-4">
+          {tArticle("noArticles")}
         </p>
         <Link href="/dashboard/articles/new">
-          <Button variant="primary">Create Your First Article</Button>
+          <Button variant="primary">{tArticle("createFirst")}</Button>
         </Link>
       </div>
     );
@@ -55,11 +54,11 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
       {initialArticles.map((article) => (
         <div
           key={article.id}
-          className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+          className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
         >
           <div className="p-5 flex gap-4">
             {/* Thumbnail */}
-            <div className="relative w-32 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100">
+            <div className="relative w-32 h-24 shrink-0 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800">
               <Image
                 src={article.coverImage}
                 alt={article.title}
@@ -71,14 +70,16 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 truncate">
                 {article.title}
               </h3>
-              <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
                 {article.content.slice(0, 120)}...
               </p>
-              <div className="text-xs text-gray-500">
-                Created {new Date(article.createdAt).toLocaleDateString()}
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {tArticle("created", {
+                  date: new Date(article.createdAt).toLocaleDateString(locale),
+                })}
               </div>
             </div>
 
@@ -86,12 +87,12 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
             <div className="flex flex-col gap-2 shrink-0">
               <Link href={`/dashboard/articles/${article.id}`}>
                 <Button variant="ghost" size="sm" className="w-full">
-                  View
+                  {t("view")}
                 </Button>
               </Link>
               <Link href={`/dashboard/articles/edit/${article.id}`}>
                 <Button variant="secondary" size="sm" className="w-full">
-                  Edit
+                  {t("edit")}
                 </Button>
               </Link>
               <Button
@@ -100,7 +101,7 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
                 onClick={() => handleDelete(article.id, article.title)}
                 isLoading={deleteMutation.isPending}
               >
-                Delete
+                {t("delete")}
               </Button>
             </div>
           </div>
@@ -109,32 +110,32 @@ export function MyArticleList({ initialArticles, page, totalPages }: MyArticleLi
 
       {/* Pagination controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
           {page > 1 ? (
             <Link href={`/dashboard?page=${page - 1}`}>
               <Button variant="secondary" size="sm">
-                Previous
+                {t("previous")}
               </Button>
             </Link>
           ) : (
             <Button variant="secondary" size="sm" disabled>
-              Previous
+              {t("previous")}
             </Button>
           )}
 
-          <span className="text-sm text-gray-600">
-            Page {page} of {totalPages}
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {t("page", { current: page, total: totalPages })}
           </span>
 
           {page < totalPages ? (
             <Link href={`/dashboard?page=${page + 1}`}>
               <Button variant="secondary" size="sm">
-                Next
+                {t("next")}
               </Button>
             </Link>
           ) : (
             <Button variant="secondary" size="sm" disabled>
-              Next
+              {t("next")}
             </Button>
           )}
         </div>

@@ -1,0 +1,100 @@
+{
+  "common": {
+    "cms": "CMS",
+    "dashboard": "Dashboard",
+    "newArticle": "New Article",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "loading": "Loading...",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {current} of {total}",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "search": "Search",
+    "viewAll": "View All Articles",
+    "startWriting": "Start Writing",
+    "myArticles": "My Articles",
+    "browseAll": "Browse All",
+    "backToArticles": "← Back to Articles"
+  },
+  "home": {
+    "welcome": "Welcome to CMS",
+    "subtitle": "Discover stories, thinking, and expertise from writers on any topic",
+    "latestArticles": "Latest Articles",
+    "resultsFor": "Results for \"{query}\"",
+    "noArticles": "No articles yet. Be the first to write!",
+    "noResults": "No articles found. Try a different search.",
+    "createFirstArticle": "Create Your First Article",
+    "createAccount": "Create an Account",
+    "authors": "Authors",
+    "articleCount": "{count, plural, one {# article} other {# articles}}"
+  },
+  "search": {
+    "placeholder": "Search articles or authors..."
+  },
+  "article": {
+    "createTitle": "Create New Article",
+    "createSubtitle": "Share your thoughts with the world",
+    "editTitle": "Edit Article",
+    "editSubtitle": "Update your article content",
+    "publishButton": "Publish Article",
+    "updateButton": "Update Article",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Enter article title",
+    "coverImageLabel": "Cover Image URL",
+    "coverImagePlaceholder": "https://example.com/image.jpg",
+    "coverImageHelper": "Must be a valid image URL (jpg, jpeg, png, gif, webp)",
+    "contentLabel": "Content",
+    "contentPlaceholder": "Write your article content here...",
+    "manageSubtitle": "Manage and edit your published articles",
+    "noArticles": "You haven't created any articles yet.",
+    "createFirst": "Create Your First Article",
+    "deleteConfirm": "Are you sure you want to delete \"{title}\"?",
+    "created": "Created {date}"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "signInSubtitle": "Sign in to continue to your dashboard",
+    "createYourAccount": "Create your account",
+    "registerSubtitle": "Start writing and sharing your articles",
+    "emailLabel": "Email",
+    "emailPlaceholder": "john@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "passwordHelper": "At least 8 characters with uppercase, lowercase, and number",
+    "nameLabel": "Full Name",
+    "namePlaceholder": "John Doe",
+    "signInButton": "Sign In",
+    "createAccountButton": "Create Account",
+    "noAccount": "Don't have an account?",
+    "createOne": "Create one",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "termsNotice": "By creating an account, you agree to our Terms of Service"
+  },
+  "validation": {
+    "invalidCredentials": "Invalid credentials",
+    "loginError": "An error occurred during login",
+    "emailAlreadyExists": "An account with this email already exists",
+    "failedToCreate": "Failed to create account"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try again",
+    "pageNotFound": "Page not found",
+    "pageNotFoundDescription": "The page you are looking for does not exist.",
+    "goHome": "Go home",
+    "articleNotFound": "Article not found",
+    "onlyEditOwn": "You can only edit your own articles",
+    "onlyDeleteOwn": "You can only delete your own articles"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "es": "Español"
+  }
+}

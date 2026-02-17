@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import type { AuthorWithCount } from '@/types/article';
 
 interface AuthorsListProps {
@@ -6,6 +7,8 @@ interface AuthorsListProps {
 }
 
 export function AuthorsList({ authors }: AuthorsListProps) {
+  const t = useTranslations('home');
+
   if (authors.length === 0) return null;
 
   return (
@@ -15,15 +18,15 @@ export function AuthorsList({ authors }: AuthorsListProps) {
           <Link
             key={author.id}
             href={`/?q=${encodeURIComponent(author.name)}`}
-            className="flex-shrink-0 flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-400 transition-colors"
+            className="flex-shrink-0 flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
           >
-            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center text-sm font-semibold">
+            <div className="w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 flex items-center justify-center text-sm font-semibold">
               {author.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{author.name}</p>
-              <p className="text-xs text-gray-500">
-                {author.articleCount} {author.articleCount === 1 ? 'article' : 'articles'}
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{author.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t('articleCount', { count: author.articleCount })}
               </p>
             </div>
           </Link>

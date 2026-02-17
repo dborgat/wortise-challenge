@@ -11,7 +11,7 @@ export const createCaller = async () => {
   const context = await createContext({
     req: new Request('https://localhost', { headers: reqHeaders }),
     resHeaders: new Headers(),
-  });
+  } as any);
   return appRouter.createCaller(context);
 };
 

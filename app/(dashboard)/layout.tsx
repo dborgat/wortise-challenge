@@ -3,17 +3,15 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { getTranslations } from "next-intl/server";
 
-/**
- * Dashboard layout
- * Protected layout for authenticated users
- */
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Check authentication
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -22,34 +20,38 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const t = await getTranslations("common");
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
-              <Link href="/" className="text-xl font-bold text-gray-900">
-                CMS
+              <Link href="/" className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {t('cms')}
               </Link>
               <nav className="hidden md:flex gap-6">
                 <Link
                   href="/dashboard"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  My Articles
+                  {t('myArticles')}
                 </Link>
                 <Link
                   href="/"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  Browse All
+                  {t('browseAll')}
                 </Link>
               </nav>
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 hidden sm:block">
+              <LanguageToggle />
+              <ThemeToggle />
+              <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
                 {session.user.name}
               </span>
               <form
@@ -62,7 +64,7 @@ export default async function DashboardLayout({
                 }}
               >
                 <Button type="submit" variant="ghost" size="sm">
-                  Sign Out
+                  {t('signOut')}
                 </Button>
               </form>
             </div>

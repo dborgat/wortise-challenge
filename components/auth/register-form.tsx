@@ -10,14 +10,12 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
-/**
- * Register form component
- * Handles user registration with validation
- */
 export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState<string>('');
+  const t = useTranslations('auth');
 
   const {
     register,
@@ -37,7 +35,6 @@ export function RegisterForm() {
     setError('');
     await registerMutation.mutateAsync(data);
 
-    // Auto-login with the same credentials
     try {
       await authClient.signIn.email({
         email: data.email,
@@ -53,32 +50,32 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="space-y-4">
         <Input
-          label="Full Name"
-          placeholder="John Doe"
+          label={t('nameLabel')}
+          placeholder={t('namePlaceholder')}
           error={errors.name?.message}
           {...register('name')}
         />
 
         <Input
-          label="Email"
+          label={t('emailLabel')}
           type="email"
-          placeholder="john@example.com"
+          placeholder={t('emailPlaceholder')}
           error={errors.email?.message}
           {...register('email')}
         />
 
         <Input
-          label="Password"
+          label={t('passwordLabel')}
           type="password"
-          placeholder="••••••••"
-          helperText="At least 8 characters with uppercase, lowercase, and number"
+          placeholder={t('passwordPlaceholder')}
+          helperText={t('passwordHelper')}
           error={errors.password?.message}
           {...register('password')}
         />
       </div>
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+        <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
           {error}
         </div>
       )}
@@ -90,13 +87,13 @@ export function RegisterForm() {
         className="w-full"
         isLoading={isSubmitting}
       >
-        Create Account
+        {t('createAccountButton')}
       </Button>
 
-      <p className="text-center text-sm text-gray-600">
-        Already have an account?{' '}
-        <Link href="/login" className="font-medium text-gray-900 hover:underline">
-          Sign in
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+        {t('alreadyHaveAccount')}{' '}
+        <Link href="/login" className="font-medium text-gray-900 dark:text-gray-100 hover:underline">
+          {t('signInLink')}
         </Link>
       </p>
     </form>
