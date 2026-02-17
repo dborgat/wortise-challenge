@@ -9,9 +9,11 @@ if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is not set in environment variables");
 }
 
-if (!process.env.BETTER_AUTH_URL) {
-  throw new Error("BETTER_AUTH_URL is not set in environment variables");
-}
+// Make BETTER_AUTH_URL optional for build time
+const baseURL =
+  process.env.BETTER_AUTH_URL || process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
 
 /**
  * Better Auth instance
@@ -21,35 +23,29 @@ export const auth = betterAuth({
   database: mongodbAdapter(db, { client }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Disable for development
+    requireEmailVerification: false,
     minPasswordLength: 8,
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // Update session every 24 hours
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes
+      maxAge: 5 * 60,
     },
   },
   user: {
-    additionalFields: {
-      // We can add custom fields here if needed
-    },
+    additionalFields: {},
   },
   advanced: {
     generateId: false,
   } as Record<string, unknown>,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL,
   trustedOrigins: [
-    process.env.BETTER_AUTH_URL!,
-    // Add Vercel URL when deploying
+    baseURL,
     process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
   ].filter(Boolean),
 });
 
-/**
- * Type helper to get session from request
- */
 export type Session = typeof auth.$Infer.Session;
