@@ -1,37 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CMS - Wortise Challenge
 
-## Getting Started
+Full-stack CMS platform for creating and managing blog articles.
 
-First, run the development server:
+## 🚀 Live Demo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Production:** https://wortise-challenge-nu.vercel.app
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind CSS
+- **Backend:** tRPC, Better Auth, MongoDB
+- **Validation:** Zod, React Hook Form
+- **State Management:** TanStack Query
+- **Internationalization:** next-intl (English/Spanish)
+- **Deployment:** Vercel
+
+## ✨ Features
+
+- User authentication (register/login)
+- Article CRUD operations
+- Server-side search (by title, content, author)
+- Pagination
+- Protected routes
+- Author listing with article counts
+- Responsive design
+- Dark mode support
+- Bilingual (EN/ES)
+
+## 🤖 AI Assistance
+
+This project was developed with AI assistance from **Claude 3.5 Sonnet (Anthropic)**.
+
+AI was used for:
+
+- Architecture planning and setup
+- tRPC configuration and type-safety implementation
+- Better Auth integration
+- MongoDB schema design and indexing
+- CRUD operations implementation
+- UI component development
+- Internationalization setup
+- Performance optimizations
+
+## 🚀 Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Copy `.env.example` to `.env.local` and configure
+4. Run development server: `npm run dev`
+5. Open http://localhost:3000
+
+## 📦 Environment Variables
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+BETTER_AUTH_SECRET=your_secret_key
+BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 👤 Author
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+David Borgat
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📄 License
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# wortise-challenge
+MIT
